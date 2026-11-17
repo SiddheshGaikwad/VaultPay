@@ -8,5 +8,5 @@ import com.vaultpay.entity.Account;
 import com.vaultpay.entity.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-	 List<Transaction> findByAccount(Account account);
+	List<Transaction> findByAccountOrReceiverAccountOrderByCreatedAtDesc(Account account, Account receiverAccount);
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.vaultpay.dto.AccountResponseDTO;
+import com.vaultpay.dto.ReceiverAccountDTO;
 import com.vaultpay.entity.Account;
 import com.vaultpay.entity.User;
 import com.vaultpay.exception.BadRequestException;
@@ -17,73 +18,82 @@ import com.vaultpay.repository.UserRepository;
 @Service
 public class AccountService {
 
-    @Autowired
-    AccountRepository accountRepository;
+	@Autowired
+	AccountRepository accountRepository;
 
-    @Autowired
-    UserRepository userRepository;
+	@Autowired
+	UserRepository userRepository;
 
-    public AccountResponseDTO createAccount(Long userId) {
+	public AccountResponseDTO createAccount(Long userId) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found"));
+		User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (accountRepository.existsByUser(user)) {
+		if (accountRepository.existsByUser(user)) {
 
-            throw new BadRequestException(
-                    "User already has an account");
-        }
+			throw new BadRequestException("User already has an account");
+		}
 
-        Account account = new Account();
+		Account account = new Account();
 
-        account.setUser(user);
-        account.setAccountNumber("ACC" + (1000 + userId));
-        account.setBalance(java.math.BigDecimal.ZERO);
-        account.setStatus("ACTIVE");
+		account.setUser(user);
+		account.setAccountNumber("ACC" + (1000 + userId));
+		account.setBalance(java.math.BigDecimal.ZERO);
+		account.setStatus("ACTIVE");
 
-        Account savedAccount =
-                accountRepository.save(account);
+		Account savedAccount = accountRepository.save(account);
 
-        AccountResponseDTO response =
-                new AccountResponseDTO();
+		AccountResponseDTO response = new AccountResponseDTO();
 
-        response.setId(savedAccount.getId());
-        response.setAccountNumber(
-                savedAccount.getAccountNumber());
-        response.setBalance(
-                savedAccount.getBalance());
-        response.setStatus(
-                savedAccount.getStatus());
-        response.setUserId(
-                savedAccount.getUser().getId());
+		response.setId(savedAccount.getId());
+		response.setAccountNumber(savedAccount.getAccountNumber());
+		response.setBalance(savedAccount.getBalance());
+		response.setStatus(savedAccount.getStatus());
+		response.setUserId(savedAccount.getUser().getId());
 
-        return response;
-    }
-    public List<AccountResponseDTO> getAllAccounts() {
+		return response;
+	}
 
-        List<Account> accounts = accountRepository.findAll();
+	public List<AccountResponseDTO> getAllAccounts() {
 
-        return accounts.stream()
-                .map(account -> {
+		List<Account> accounts = accountRepository.findAll();
 
-                    AccountResponseDTO response =
-                            new AccountResponseDTO();
+		return accounts.stream().map(account -> {
 
-                    response.setId(account.getId());
-                    response.setAccountNumber(
-                            account.getAccountNumber());
-                    response.setBalance(
-                            account.getBalance());
-                    response.setStatus(
-                            account.getStatus());
-                    response.setUserId(
-                            account.getUser().getId());
+			AccountResponseDTO response = new AccountResponseDTO();
 
-                    return response;
+			response.setId(account.getId());
+			response.setAccountNumber(account.getAccountNumber());
+			response.setBalance(account.getBalance());
+			response.setStatus(account.getStatus());
+			response.setUserId(account.getUser().getId());
 
-                })
-                .collect(Collectors.toList());
-    }
+			return response;
+
+		}).collect(Collectors.toList());
+	}
+
+	public List<AccountResponseDTO> getAccountsByUserId(Long userId) {
+		return accountRepository.findByUser_Id(userId).stream().map(account -> {
+			AccountResponseDTO dto = new AccountResponseDTO();
+			dto.setId(account.getId());
+			dto.setAccountNumber(account.getAccountNumber());
+			dto.setBalance(account.getBalance());
+			dto.setStatus(account.getStatus());
+			dto.setUserId(account.getUser().getId());
+			return dto;
+		}).toList();
+	}
+
+	public Long getUserIdByUsername(String username) {
+		return userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"))
+				.getId();
+	}
+
+	public List<ReceiverAccountDTO> getReceiverAccounts(String username) {
+
+		User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+		return accountRepository.findReceiverAccounts(user.getId());
+	}
 }

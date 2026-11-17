@@ -39,13 +39,11 @@ class TransferControllerTest {
 
 	@BeforeEach
 	void setup() {
-
 		mockMvc = MockMvcBuilders.standaloneSetup(transferController).build();
 	}
 
 	@Test
 	void transferShouldReturn200() throws Exception {
-
 		TransferResponseDTO response = new TransferResponseDTO();
 
 		response.setTransactionId(30L);
@@ -57,13 +55,12 @@ class TransferControllerTest {
 		response.setCreatedAt(LocalDateTime.now());
 
 		when(authentication.getName()).thenReturn("testuser");
-
 		when(transferService.transfer(any(), any())).thenReturn(response);
 
 		String requestBody = """
 				{
 				    "senderAccountId": 8,
-				    "receiverAccountId": 3,
+				    "receiverAccountNumber": "ACC1003",
 				    "amount": 200
 				}
 				""";
@@ -77,11 +74,10 @@ class TransferControllerTest {
 
 	@Test
 	void transferShouldFailWithInvalidData() throws Exception {
-
 		String requestBody = """
 				{
 				    "senderAccountId": null,
-				    "receiverAccountId": null,
+				    "receiverAccountNumber": null,
 				    "amount": -100
 				}
 				""";
@@ -91,16 +87,18 @@ class TransferControllerTest {
 	}
 
 	@Test
-	void transferShouldFailWhenAmountIsMissing() throws Exception {
+    void transferShouldFailWhenAmountIsMissing() throws Exception {
+        String requestBody = """
+                {
+                    "senderAccountId": 8,
+                    "receiverAccountNumber": "ACC1003"
+                }
+                """;
 
-		String requestBody = """
-				{
-				    "senderAccountId": 8,
-				    "receiverAccountId": 3
-				}
-				""";
-
-		mockMvc.perform(post("/api/transfers").principal(authentication).contentType(MediaType.APPLICATION_JSON)
-				.content(requestBody)).andExpect(status().isBadRequest());
-	}
+        mockMvc.perform(post("/api/transfers")
+                .principal(authentication)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
 }

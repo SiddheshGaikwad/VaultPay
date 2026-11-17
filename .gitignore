@@ -40,3 +40,13 @@ build/
 # Logs
 *.log
 bin/
+
+# Node.js dependencies
+node_modules/
+
+# Frontend build output
+frontend/dist/
+frontend/build/
+
+# Temporary error files
+error.txt

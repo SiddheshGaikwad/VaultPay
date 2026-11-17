@@ -39,93 +39,112 @@ public class TransferService {
 	public TransferResponseDTO transfer(TransferRequestDTO transferRequest, String username) {
 
 		Long senderId = transferRequest.getSenderAccountId();
-		Long receiverId = transferRequest.getReceiverAccountId();
+		String receiverAccountNumber = transferRequest.getReceiverAccountNumber();
+		var amount = transferRequest.getAmount();
 
-		if (senderId.equals(receiverId)) {
-			throw new BadRequestException("Sender and receiver cannot be same");
+		if (senderId == null) {
+			throw new BadRequestException("Sender account ID is required");
 		}
-		if (transferRequest.getAmount() == null
-		        || transferRequest.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-		    throw new BadRequestException("Transfer amount must be greater than zero");
+
+		if (receiverAccountNumber == null || receiverAccountNumber.isBlank()) {
+			throw new BadRequestException("Receiver account number is required");
 		}
+
+		if (amount == null || amount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+			throw new BadRequestException("Transfer amount must be greater than zero");
+		}
+
 		User user = userRepository.findByUsername(username)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+		// Find the receiver using the account number
+		Account receiverAccount = accountRepository.findByAccountNumber(receiverAccountNumber.trim())
+				.orElseThrow(() -> new ResourceNotFoundException("Receiver account not found"));
+
+		Long receiverId = receiverAccount.getId();
+
+		if (senderId.equals(receiverId)) {
+			throw new BadRequestException("Sender and receiver cannot be the same");
+		}
 
 		// Always lock accounts in ascending ID order
 		Long firstLockId = Math.min(senderId, receiverId);
 		Long secondLockId = Math.max(senderId, receiverId);
 
 		Account firstAccount = accountRepository.findByIdForUpdate(firstLockId)
-				.orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Sender or receiver account not found"));
 
 		Account secondAccount = accountRepository.findByIdForUpdate(secondLockId)
-				.orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Sender or receiver account not found"));
 
-		// Identify sender and receiver after locking
+		// Identify accounts after locking
 		Account sender = senderId.equals(firstLockId) ? firstAccount : secondAccount;
 
 		Account receiver = receiverId.equals(firstLockId) ? firstAccount : secondAccount;
 
+		// Verify sender ownership
 		if (!sender.getUser().getId().equals(user.getId())) {
 			throw new BadRequestException("You are not allowed to transfer from this account");
 		}
 
-		if (!sender.getStatus().equals("ACTIVE")) {
+		if (!"ACTIVE".equals(sender.getStatus())) {
 			throw new BadRequestException("Sender account is not active");
 		}
 
-		if (!receiver.getStatus().equals("ACTIVE")) {
+		if (!"ACTIVE".equals(receiver.getStatus())) {
 			throw new BadRequestException("Receiver account is not active");
 		}
 
-		if (sender.getBalance().compareTo(transferRequest.getAmount()) < 0) {
-
+		if (sender.getBalance().compareTo(amount) < 0) {
 			throw new BadRequestException("Insufficient balance");
 		}
 
-		sender.setBalance(sender.getBalance().subtract(transferRequest.getAmount()));
-
-		receiver.setBalance(receiver.getBalance().add(transferRequest.getAmount()));
+		// Update account balances
+		sender.setBalance(sender.getBalance().subtract(amount));
+		receiver.setBalance(receiver.getBalance().add(amount));
 
 		accountRepository.save(sender);
 		accountRepository.save(receiver);
 
 		String transactionReference = "TXN-" + UUID.randomUUID();
+		LocalDateTime now = LocalDateTime.now();
 
+		// Save transaction
 		Transaction transaction = new Transaction();
 
 		transaction.setAccount(sender);
 		transaction.setReceiverAccount(receiver);
-		transaction.setAmount(transferRequest.getAmount());
+		transaction.setAmount(amount);
 		transaction.setType("TRANSFER");
 		transaction.setTransactionReference(transactionReference);
 		transaction.setStatus("SUCCESS");
-		transaction.setCreatedAt(LocalDateTime.now());
+		transaction.setCreatedAt(now);
 
 		Transaction savedTransaction = transactionRepository.save(transaction);
 
-		// Debit ledger
+		// Debit ledger entry
 		LedgerEntry debitEntry = new LedgerEntry();
 
 		debitEntry.setAccount(sender);
 		debitEntry.setEntryType("DEBIT");
-		debitEntry.setAmount(transferRequest.getAmount());
+		debitEntry.setAmount(amount);
 		debitEntry.setTransactionReference(transactionReference);
-		debitEntry.setCreatedAt(LocalDateTime.now());
+		debitEntry.setCreatedAt(now);
 
 		ledgerEntryRepository.save(debitEntry);
 
-		// Credit ledger
+		// Credit ledger entry
 		LedgerEntry creditEntry = new LedgerEntry();
 
 		creditEntry.setAccount(receiver);
 		creditEntry.setEntryType("CREDIT");
-		creditEntry.setAmount(transferRequest.getAmount());
+		creditEntry.setAmount(amount);
 		creditEntry.setTransactionReference(transactionReference);
-		creditEntry.setCreatedAt(LocalDateTime.now());
+		creditEntry.setCreatedAt(now);
 
 		ledgerEntryRepository.save(creditEntry);
 
+		// Build response
 		TransferResponseDTO response = new TransferResponseDTO();
 
 		response.setTransactionId(savedTransaction.getId());
