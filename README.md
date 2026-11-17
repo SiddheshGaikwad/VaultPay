@@ -46,6 +46,27 @@ The application follows a layered backend architecture and provides a modern, re
 - Spring Boot Actuator monitoring.
 - Unit and integration testing.
 
+
+
+## Application Screenshots
+
+### Login Page
+![VaultPay Login](screenshots/login-page.png)
+
+### Dashboard
+![VaultPay Dashboard](screenshots/dashboard.png)
+
+### Transfer Money
+![VaultPay Transfer Money](screenshots/transfer-money.png)
+
+### Transaction History
+![VaultPay Transactions](screenshots/transactions.png)
+
+### AI Assistant
+![VaultPay AI Assistant](screenshots/Ai-assistant.png)
+
+
+
 ## Technology Stack
 
 | Technology | Purpose |
