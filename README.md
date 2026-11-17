@@ -1,120 +1,251 @@
 # VaultPay – Digital Banking & Ledger System
 
-VaultPay is a backend digital banking application built using Java and Spring Boot. It provides REST APIs for user management, account operations, transactions, fund transfers, and ledger entries, with JWT-based authentication and role-based authorization.
+VaultPay is a full-stack digital banking application built using **Java, Spring Boot, React, and MySQL**. It provides secure banking operations, account management, fund transfers, transaction history, ledger management, and an AI-powered assistant.
+
+The application follows a layered backend architecture and provides a modern, responsive frontend for managing banking activities.
 
 ## Features
 
-- **User Management** – Create users and authenticate using login APIs.
-- **Account Management** – Create and retrieve bank accounts.
-- **Transactions** – Manage deposits, withdrawals, and transaction history.
-- **Fund Transfers** – Transfer funds between accounts.
-- **Double-Entry Ledger** – Maintain debit and credit ledger entries.
-- **Security** – JWT authentication and role-based access control for customers and admins.
-- **Exception Handling** – Centralized exception handling with meaningful API responses.
-- **API Documentation** – Swagger UI using SpringDoc OpenAPI.
-- **Monitoring** – Spring Boot Actuator health and info endpoints.
-- **Unit Testing** – JUnit and Mockito tests for controllers, services, security, and exception handling.
+### Authentication & Security
+- User registration and login.
+- JWT-based authentication.
+- Role-based authorization for customers and administrators.
+- Protected REST APIs using Spring Security.
 
-## Tech Stack
+### Account Management
+- Create and retrieve bank accounts.
+- View account information and balances.
+- Retrieve eligible receiver accounts.
+
+### Fund Transfers
+- Transfer money between accounts.
+- Validate account ownership and account status.
+- Check available balance before transfers.
+- Manage concurrent transfers using database locking.
+- Maintain transaction consistency and rollback on failure.
+
+### Transaction Management
+- View transaction history.
+- Track deposits, withdrawals, and transfers.
+- Display transaction details and statuses.
+- Dashboard statistics for money received and sent.
+
+### Double-Entry Ledger
+- Maintain debit and credit ledger entries.
+- Record financial movements for transfers.
+- Preserve transaction consistency.
+
+### AI Assistant
+- AI-powered banking assistant integration.
+- Spring AI with Ollama.
+- Configured to use the Llama 3.2 model.
+
+### Additional Features
+- Centralized exception handling.
+- Swagger/OpenAPI documentation.
+- Spring Boot Actuator monitoring.
+- Unit and integration testing.
+
+## Technology Stack
 
 | Technology | Purpose |
 |---|---|
 | Java 17 | Backend programming |
-| Spring Boot | Application framework |
-| Spring Data JPA / Hibernate | Database operations and ORM |
-| MySQL | Relational database |
+| Spring Boot | Backend framework |
 | Spring Security | Authentication and authorization |
+| Spring Data JPA / Hibernate | ORM and database operations |
+| MySQL 8 | Relational database |
 | JWT | Token-based authentication |
-| Maven | Dependency management and build |
+| Maven | Build and dependency management |
+| React | Frontend development |
+| Vite | Frontend build tool |
+| Tailwind CSS | Frontend styling |
+| Axios | API communication |
+| Spring AI | AI integration |
+| Ollama | Local AI model runtime |
 | JUnit / Mockito | Automated testing |
 | Swagger / OpenAPI | API documentation |
-| Spring Boot Actuator | Application monitoring |
 
-## Architecture
+## Application Architecture
 
-The application follows a layered architecture:
+VaultPay follows a layered backend architecture with a React frontend.
 
-- **Controller Layer** – Handles HTTP requests and responses.
-- **Service Layer** – Implements business logic.
-- **Repository Layer** – Communicates with the database.
-- **Entity Layer** – Represents database tables.
-- **DTO Layer** – Transfers request and response data.
-- **Security Layer** – Handles JWT authentication and access control.
+```text
+                 React Frontend
+                       |
+                    Axios
+                       |
+                 REST API Layer
+                       |
+              Spring Boot Backend
+                       |
+        +--------------+--------------+
+        |              |              |
+    Controller      Service       Security
+        |              |              |
+        +--------------+--------------+
+                       |
+                 Repository Layer
+                       |
+                    MySQL
+                       |
+              Transaction Ledger
+
+             AI Assistant Integration
+                 Spring AI + Ollama
+```
+
+## Project Structure
+
+```text
+VaultPay/
+|
+|-- frontend/
+|   |-- public/
+|   |-- src/
+|   |   |-- assets/
+|   |   |-- pages/
+|   |   |-- services/
+|   |   |-- App.jsx
+|   |   |-- Dashboard.jsx
+|   |   |-- api.js
+|   |   |-- main.jsx
+|   |
+|   |-- package.json
+|   |-- vite.config.js
+|
+|-- src/
+|   |-- main/
+|   |   |-- java/com/vaultpay/
+|   |   |-- resources/
+|   |
+|   |-- test/
+|
+|-- pom.xml
+|-- README.md
+```
 
 ## Prerequisites
 
+Install the following before running the application:
+
 - Java 17
 - MySQL 8.x
-- Maven (or the included Maven Wrapper)
+- Node.js and npm
 - Git
+- Ollama (for the AI Assistant)
+- Maven or the included Maven Wrapper
 
-## Configuration
+## Running the Application Locally
 
-Configure the following environment variables before running the application:
-
-```text
-DB_PASSWORD=your_mysql_password
-VAULTPAY_JWT_SECRET=your_secure_jwt_secret
-```
-
-The JWT secret must be sufficiently strong and must be kept private.
-
-Check `src/main/resources/application.properties` to confirm the database URL and other application settings.
-
-## Run Locally
-
-**1. Clone the repository**
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/SiddheshGaikwad/VaultPay.git
 cd VaultPay
 ```
 
-**2. Configure environment variables**
+### 2. Configure MySQL
 
-Set `DB_PASSWORD` and `VAULTPAY_JWT_SECRET` in your operating system or IDE run configuration.
+Make sure your MySQL server is running.
 
-**3. Start the application**
+The application uses the following database configuration:
 
-On Windows:
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/vaultpay?createDatabaseIfNotExist=true
+spring.datasource.username=root
+spring.datasource.password=${DB_PASSWORD}
+```
+
+Set the required environment variables.
+
+**Windows CMD:**
+
+```cmd
+set DB_PASSWORD=your_mysql_password
+set VAULTPAY_JWT_SECRET=your_secure_jwt_secret
+```
+
+Use your own strong JWT secret. Never commit credentials to GitHub.
+
+### 3. Start the Backend
+
+From the root `VaultPay` directory:
 
 ```cmd
 mvnw.cmd spring-boot:run
 ```
 
-**4. Access the application**
+The backend runs at:
 
-- Base URL: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- Actuator Health: `http://localhost:8080/actuator/health`
-- Actuator Info: `http://localhost:8080/actuator/info`
+`http://localhost:8080`
 
-Ensure MySQL is running and the configured database settings are correct.
+### 4. Start the Frontend
+
+Open a second terminal and navigate to the frontend directory:
+
+```cmd
+cd frontend
+npm install
+npm run dev
+```
+
+Vite will display the local frontend URL, usually:
+
+`http://localhost:5173`
+
+### 5. Run the AI Assistant
+
+Install and start Ollama, then pull the configured model:
+
+```bash
+ollama pull llama3.2
+ollama serve
+```
+
+Keep Ollama running while using the AI Assistant.
+
+## API Documentation & Monitoring
+
+Once the backend is running:
+
+| Resource | URL |
+|---|---|
+| Swagger UI | http://localhost:8080/swagger-ui/index.html |
+| Actuator Health | http://localhost:8080/actuator/health |
+| Actuator Info | http://localhost:8080/actuator/info |
 
 ## Testing
 
-Run the automated test suite using the Maven Wrapper:
+Run the backend test suite from the root project directory:
 
 ```cmd
 mvnw.cmd test
 ```
 
+The project currently passes **62 automated tests with zero failures and zero errors**.
+
+Tests include unit tests and integration tests covering transfer operations, concurrency, and rollback behavior.
+
 ## Security Notes
 
-- Never commit database passwords, JWT secrets, or other credentials.
-- Use a unique, strong JWT secret in each environment.
-- Configure production database credentials securely.
-- Review security settings before deploying the application.
+- Never commit database passwords or JWT secrets.
+- Use environment variables for sensitive configuration.
+- Use strong, unique secrets.
+- Validate account ownership and transaction authorization.
+- Review security settings before production deployment.
 
 ## Future Enhancements
 
-- React.js frontend with Tailwind CSS
-- Enhanced transaction reporting and dashboard
-- Docker-based deployment
-- Additional integration and security tests
+- Docker-based deployment.
+- Enhanced analytics and reporting.
+- Additional security and integration testing.
+- Production deployment and monitoring improvements.
 
 ## Author
 
 **Siddhesh Gaikwad**
 
-GitHub: [SiddheshGaikwad](https://github.com/SiddheshGaikwad)
+GitHub: https://github.com/SiddheshGaikwad
+
+Project Repository: https://github.com/SiddheshGaikwad/VaultPay
